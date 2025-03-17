@@ -2,13 +2,10 @@ import { pgTable, text, serial, integer, date, decimal } from "drizzle-orm/pg-co
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-export const userRoles = ["user", "admin"] as const;
-
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
-  role: text("role").notNull().default("user"),
 });
 
 export const categories = [
@@ -35,9 +32,6 @@ export const insertUserSchema = createInsertSchema(users)
   .pick({
     username: true,
     password: true,
-  })
-  .extend({
-    role: z.enum(userRoles).default("user"),
   });
 
 export const insertExpenseSchema = createInsertSchema(expenses)
@@ -57,4 +51,3 @@ export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertExpense = z.infer<typeof insertExpenseSchema>;
 export type Expense = typeof expenses.$inferSelect;
-export type UserRole = typeof userRoles[number];
