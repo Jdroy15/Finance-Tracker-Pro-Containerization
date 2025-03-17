@@ -1,14 +1,21 @@
 import { useQuery } from "@tanstack/react-query";
 import { Expense } from "@shared/schema";
 import { NavSidebar } from "@/components/nav-sidebar";
-import { format, startOfMonth, endOfMonth, eachDayOfInterval } from "date-fns";
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, subMonths } from "date-fns";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
+import { Loader2, CalendarIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   ResponsiveContainer,
   LineChart,
@@ -22,6 +29,7 @@ import {
   Cell,
   Legend,
 } from "recharts";
+import { useState } from "react";
 
 // Updated vibrant colors
 const COLORS = [
@@ -36,6 +44,8 @@ const COLORS = [
 ];
 
 export default function AnalyticsPage() {
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+
   const { data: expenses, isLoading } = useQuery<Expense[]>({
     queryKey: ["/api/expenses"],
   });
@@ -51,10 +61,9 @@ export default function AnalyticsPage() {
     );
   }
 
-  // Calculate daily spending for the current month
-  const now = new Date();
-  const monthStart = startOfMonth(now);
-  const monthEnd = endOfMonth(now);
+  // Calculate daily spending for the selected month
+  const monthStart = startOfMonth(selectedDate);
+  const monthEnd = endOfMonth(selectedDate);
   const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
 
   const dailySpending = daysInMonth.map(day => {
@@ -85,16 +94,50 @@ export default function AnalyticsPage() {
     value: Number(value.toFixed(2)),
   }));
 
+  const totalSpent = monthlyExpenses.reduce(
+    (total, expense) => total + Number(expense.amount),
+    0
+  );
+
   return (
     <div className="flex h-screen">
       <NavSidebar />
       <div className="flex-1 p-8 overflow-auto">
         <div className="max-w-7xl mx-auto space-y-8">
-          <h1 className="text-3xl font-bold">Expense Analytics</h1>
+          <div className="flex justify-between items-center">
+            <h1 className="text-3xl font-bold">Expense Analytics</h1>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="w-[240px] justify-start">
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {format(selectedDate, 'MMMM yyyy')}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="end">
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={(date) => date && setSelectedDate(date)}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
 
           <Card>
             <CardHeader>
-              <CardTitle>Daily Spending This Month</CardTitle>
+              <CardTitle>Monthly Overview</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                Total Spent: ${totalSpent.toFixed(2)}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Daily Spending - {format(selectedDate, 'MMMM yyyy')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="h-[300px]">
@@ -128,10 +171,10 @@ export default function AnalyticsPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Monthly Expenses by Category</CardTitle>
+              <CardTitle>Expenses by Category - {format(selectedDate, 'MMMM yyyy')}</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-[400px]"> {/* Increased height for better visibility */}
+              <div className="h-[400px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
@@ -140,7 +183,7 @@ export default function AnalyticsPage() {
                       nameKey="name"
                       cx="50%"
                       cy="50%"
-                      outerRadius={120} // Increased size
+                      outerRadius={120}
                       label={({
                         cx,
                         cy,
@@ -151,7 +194,7 @@ export default function AnalyticsPage() {
                         name,
                       }) => {
                         const RADIAN = Math.PI / 180;
-                        const radius = innerRadius + (outerRadius - innerRadius) * 1.1; // Increased label distance
+                        const radius = innerRadius + (outerRadius - innerRadius) * 1.1;
                         const x = cx + radius * Math.cos(-midAngle * RADIAN);
                         const y = cy + radius * Math.sin(-midAngle * RADIAN);
 
