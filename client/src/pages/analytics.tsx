@@ -8,7 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Loader2, CalendarIcon } from "lucide-react";
+import { Loader2, CalendarIcon, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -49,6 +49,31 @@ export default function AnalyticsPage() {
   const { data: expenses, isLoading } = useQuery<Expense[]>({
     queryKey: ["/api/expenses"],
   });
+
+  const handleExport = async () => {
+    try {
+      const response = await fetch('/api/expenses/export', {
+        method: 'GET',
+        headers: {
+          'Accept': 'text/csv',
+        },
+      });
+
+      if (!response.ok) throw new Error('Export failed');
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `expenses-${format(selectedDate, 'yyyy-MM')}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('Export failed:', error);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -106,22 +131,32 @@ export default function AnalyticsPage() {
         <div className="max-w-7xl mx-auto space-y-8">
           <div className="flex justify-between items-center">
             <h1 className="text-3xl font-bold">Expense Analytics</h1>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className="w-[240px] justify-start">
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {format(selectedDate, 'MMMM yyyy')}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="end">
-                <Calendar
-                  mode="single"
-                  selected={selectedDate}
-                  onSelect={(date) => date && setSelectedDate(date)}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
+            <div className="flex gap-4">
+              <Button 
+                variant="outline" 
+                className="flex items-center gap-2"
+                onClick={handleExport}
+              >
+                <Download className="h-4 w-4" />
+                Export CSV
+              </Button>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-[240px] justify-start">
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {format(selectedDate, 'MMMM yyyy')}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="end">
+                  <Calendar
+                    mode="single"
+                    selected={selectedDate}
+                    onSelect={(date) => date && setSelectedDate(date)}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
           </div>
 
           <Card>

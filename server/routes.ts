@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
 import { insertExpenseSchema } from "@shared/schema";
+import { format, startOfMonth, endOfMonth } from "date-fns";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
@@ -42,6 +43,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     await storage.deleteExpense(expense.id);
     res.sendStatus(204);
+  });
+
+  // Export expenses to CSV
+  app.get("/api/expenses/export", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+
+    try {
+      const targetDate = req.query.date ? new Date(req.query.date as string) : new Date();
+      const monthStart = startOfMonth(targetDate);
+      const monthEnd = endOfMonth(targetDate);
+
+      const expenses = await storage.getExpenses(req.user.id);
+      const monthlyExpenses = expenses.filter(expense => {
+        const expenseDate = new Date(expense.date);
+        return expenseDate >= monthStart && expenseDate <= monthEnd;
+      });
+
+      // Create CSV content
+      const csvHeader = "Date,Category,Description,Amount\n";
+      const csvRows = monthlyExpenses.map(expense => {
+        const date = format(new Date(expense.date), "yyyy-MM-dd");
+        const description = expense.description.replace(/,/g, ";"); // Escape commas
+        return `${date},${expense.category},${description},${expense.amount}`;
+      }).join("\n");
+
+      const csvContent = csvHeader + csvRows;
+
+      // Set headers for file download
+      res.setHeader("Content-Type", "text/csv");
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename=expenses-${format(targetDate, "yyyy-MM")}.csv`
+      );
+
+      res.send(csvContent);
+    } catch (error) {
+      console.error("Export error:", error);
+      res.status(500).json({ error: "Failed to export expenses" });
+    }
   });
 
   const httpServer = createServer(app);
