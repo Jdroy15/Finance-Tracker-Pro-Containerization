@@ -42,8 +42,8 @@ export const insertExpenseSchema = createInsertSchema(expenses)
   })
   .extend({
     category: z.enum(categories),
-    amount: z.string().transform((val) => parseFloat(val)),
-    date: z.string().transform((val) => new Date(val)),
+    amount: z.coerce.number().positive("Amount must be positive").transform(val => Number(val.toFixed(2))),
+    date: z.coerce.date(),
   });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;

@@ -43,7 +43,7 @@ export default function AddExpensePage() {
     resolver: zodResolver(insertExpenseSchema),
     defaultValues: {
       amount: "",
-      category: categories[0],
+      category: undefined,
       description: "",
       date: format(new Date(), "yyyy-MM-dd"),
     },
@@ -54,7 +54,7 @@ export default function AddExpensePage() {
     if (existingExpense) {
       form.reset({
         amount: existingExpense.amount.toString(),
-        category: existingExpense.category as typeof categories[number],
+        category: existingExpense.category,
         description: existingExpense.description,
         date: format(new Date(existingExpense.date), "yyyy-MM-dd"),
       });
@@ -136,6 +136,7 @@ export default function AddExpensePage() {
                       <Input
                         type="number"
                         step="0.01"
+                        min="0.01"
                         placeholder="0.00"
                         {...field}
                       />
