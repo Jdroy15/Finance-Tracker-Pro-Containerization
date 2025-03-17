@@ -17,9 +17,18 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  BarChart,
-  Bar,
+  PieChart,
+  Pie,
+  Cell,
 } from "recharts";
+
+const COLORS = [
+  "var(--chart-1)",
+  "var(--chart-2)",
+  "var(--chart-3)",
+  "var(--chart-4)",
+  "var(--chart-5)",
+];
 
 export default function AnalyticsPage() {
   const { data: expenses, isLoading } = useQuery<Expense[]>({
@@ -47,30 +56,28 @@ export default function AnalyticsPage() {
     const dayExpenses = expenses?.filter(expense => 
       format(new Date(expense.date), 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd')
     ) || [];
-    
+
     return {
       date: format(day, 'MMM d'),
       amount: dayExpenses.reduce((sum, exp) => sum + Number(exp.amount), 0)
     };
   });
 
-  // Calculate category averages
-  const categoryAverages = expenses?.reduce((acc, expense) => {
-    if (!acc[expense.category]) {
-      acc[expense.category] = {
-        category: expense.category,
-        total: 0,
-        count: 0
-      };
-    }
-    acc[expense.category].total += Number(expense.amount);
-    acc[expense.category].count += 1;
-    return acc;
-  }, {} as Record<string, { category: string; total: number; count: number }>);
+  // Calculate monthly expenses by category
+  const monthlyExpenses = expenses?.filter(expense => {
+    const expenseDate = new Date(expense.date);
+    return expenseDate >= monthStart && expenseDate <= monthEnd;
+  }) || [];
 
-  const categoryData = Object.values(categoryAverages || {}).map(({ category, total, count }) => ({
-    category,
-    average: Number((total / count).toFixed(2))
+  const categoryTotals = monthlyExpenses.reduce((acc, expense) => {
+    const category = expense.category;
+    acc[category] = (acc[category] || 0) + Number(expense.amount);
+    return acc;
+  }, {} as Record<string, number>);
+
+  const monthlyData = Object.entries(categoryTotals).map(([name, value]) => ({
+    name,
+    value: Number(value.toFixed(2)),
   }));
 
   return (
@@ -79,7 +86,7 @@ export default function AnalyticsPage() {
       <div className="flex-1 p-8 overflow-auto">
         <div className="max-w-7xl mx-auto space-y-8">
           <h1 className="text-3xl font-bold">Expense Analytics</h1>
-          
+
           <Card>
             <CardHeader>
               <CardTitle>Daily Spending This Month</CardTitle>
@@ -115,33 +122,56 @@ export default function AnalyticsPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Average Spending by Category</CardTitle>
+              <CardTitle>Monthly Expenses by Category</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={categoryData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis 
-                      dataKey="category" 
-                      tick={{ fontSize: 12 }}
-                      interval={0}
-                      angle={-45}
-                      textAnchor="end"
-                      height={60}
+                  <PieChart>
+                    <Pie
+                      data={monthlyData}
+                      dataKey="value"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={80}
+                      label={({
+                        cx,
+                        cy,
+                        midAngle,
+                        innerRadius,
+                        outerRadius,
+                        value,
+                      }) => {
+                        const RADIAN = Math.PI / 180;
+                        const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+                        const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                        const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+                        return (
+                          <text
+                            x={x}
+                            y={y}
+                            fill="white"
+                            textAnchor={x > cx ? "start" : "end"}
+                            dominantBaseline="central"
+                          >
+                            ${value}
+                          </text>
+                        );
+                      }}
+                    >
+                      {monthlyData.map((entry, index) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={COLORS[index % COLORS.length]}
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      formatter={(value: number) => [`$${value.toFixed(2)}`, "Amount"]}
                     />
-                    <YAxis 
-                      tick={{ fontSize: 12 }}
-                      tickFormatter={(value) => `$${value}`}
-                    />
-                    <Tooltip 
-                      formatter={(value: number) => [`$${value.toFixed(2)}`, "Average"]}
-                    />
-                    <Bar
-                      dataKey="average"
-                      fill="var(--primary)"
-                    />
-                  </BarChart>
+                  </PieChart>
                 </ResponsiveContainer>
               </div>
             </CardContent>
