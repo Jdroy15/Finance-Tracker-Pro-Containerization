@@ -20,14 +20,19 @@ import {
   PieChart,
   Pie,
   Cell,
+  Legend,
 } from "recharts";
 
+// Updated vibrant colors
 const COLORS = [
-  "var(--chart-1)",
-  "var(--chart-2)",
-  "var(--chart-3)",
-  "var(--chart-4)",
-  "var(--chart-5)",
+  "#FF6B6B",  // Coral Red
+  "#4ECDC4",  // Turquoise
+  "#45B7D1",  // Sky Blue
+  "#96CEB4",  // Sage Green
+  "#FFEEAD",  // Cream Yellow
+  "#D4A5A5",  // Dusty Rose
+  "#9A94BC",  // Lavender
+  "#CEE5D0",  // Mint Green
 ];
 
 export default function AnalyticsPage() {
@@ -95,7 +100,7 @@ export default function AnalyticsPage() {
               <div className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={dailySpending}>
-                    <CartesianGrid strokeDasharray="3 3" />
+                    <CartesianGrid strokeDasharray="3 3" opacity={0.5} />
                     <XAxis 
                       dataKey="date" 
                       tick={{ fontSize: 12 }}
@@ -111,8 +116,9 @@ export default function AnalyticsPage() {
                     <Line
                       type="monotone"
                       dataKey="amount"
-                      stroke="var(--primary)"
+                      stroke="#FF6B6B"
                       strokeWidth={2}
+                      dot={{ fill: "#FF6B6B" }}
                     />
                   </LineChart>
                 </ResponsiveContainer>
@@ -125,7 +131,7 @@ export default function AnalyticsPage() {
               <CardTitle>Monthly Expenses by Category</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-[300px]">
+              <div className="h-[400px]"> {/* Increased height for better visibility */}
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
@@ -134,7 +140,7 @@ export default function AnalyticsPage() {
                       nameKey="name"
                       cx="50%"
                       cy="50%"
-                      outerRadius={80}
+                      outerRadius={120} // Increased size
                       label={({
                         cx,
                         cy,
@@ -142,9 +148,10 @@ export default function AnalyticsPage() {
                         innerRadius,
                         outerRadius,
                         value,
+                        name,
                       }) => {
                         const RADIAN = Math.PI / 180;
-                        const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+                        const radius = innerRadius + (outerRadius - innerRadius) * 1.1; // Increased label distance
                         const x = cx + radius * Math.cos(-midAngle * RADIAN);
                         const y = cy + radius * Math.sin(-midAngle * RADIAN);
 
@@ -152,11 +159,12 @@ export default function AnalyticsPage() {
                           <text
                             x={x}
                             y={y}
-                            fill="white"
+                            fill="currentColor"
                             textAnchor={x > cx ? "start" : "end"}
                             dominantBaseline="central"
+                            className="text-sm font-medium"
                           >
-                            ${value}
+                            {`${name}: $${value}`}
                           </text>
                         );
                       }}
@@ -165,11 +173,18 @@ export default function AnalyticsPage() {
                         <Cell
                           key={`cell-${index}`}
                           fill={COLORS[index % COLORS.length]}
+                          stroke="white"
+                          strokeWidth={2}
                         />
                       ))}
                     </Pie>
                     <Tooltip
                       formatter={(value: number) => [`$${value.toFixed(2)}`, "Amount"]}
+                    />
+                    <Legend 
+                      verticalAlign="bottom" 
+                      height={36}
+                      formatter={(value) => <span className="text-sm">{value}</span>}
                     />
                   </PieChart>
                 </ResponsiveContainer>
