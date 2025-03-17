@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -29,10 +30,10 @@ import { Loader2 } from "lucide-react";
 export default function AddExpensePage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  
+
   // Get expense ID from URL if editing
   const expenseId = new URLSearchParams(window.location.search).get("id");
-  
+
   const { data: existingExpense, isLoading: isLoadingExpense } = useQuery<Expense>({
     queryKey: [`/api/expenses/${expenseId}`],
     enabled: !!expenseId,
@@ -49,11 +50,11 @@ export default function AddExpensePage() {
   });
 
   // Update form values when editing existing expense
-  React.useEffect(() => {
+  useEffect(() => {
     if (existingExpense) {
       form.reset({
         amount: existingExpense.amount.toString(),
-        category: existingExpense.category,
+        category: existingExpense.category as typeof categories[number],
         description: existingExpense.description,
         date: format(new Date(existingExpense.date), "yyyy-MM-dd"),
       });
