@@ -6,17 +6,28 @@ import {
   PlusCircle,
   LogOut,
   LineChart,
+  Users,
 } from "lucide-react";
 
 export function NavSidebar() {
-  const { logoutMutation } = useAuth();
+  const { logoutMutation, hasRole } = useAuth();
   const [location] = useLocation();
 
-  const links = [
+  const commonLinks = [
     { href: "/", label: "Dashboard", icon: LayoutDashboard },
     { href: "/add", label: "Add Expense", icon: PlusCircle },
     { href: "/analytics", label: "Analytics", icon: LineChart },
   ];
+
+  // Admin-only links
+  const adminLinks = [
+    { href: "/admin/users", label: "Manage Users", icon: Users },
+  ];
+
+  // Combine links based on user role
+  const links = hasRole("admin") 
+    ? [...commonLinks, ...adminLinks]
+    : commonLinks;
 
   return (
     <div className="flex flex-col h-screen border-r bg-card p-4 w-64">
