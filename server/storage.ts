@@ -53,9 +53,11 @@ export class MemStorage implements IStorage {
   }
 
   async getExpenses(userId: number): Promise<Expense[]> {
-    return Array.from(this.expenses.values()).filter(
+    const userExpenses = Array.from(this.expenses.values()).filter(
       (expense) => expense.userId === userId,
     );
+    console.log('Retrieved expenses for user', userId, ':', userExpenses);
+    return userExpenses;
   }
 
   async getExpenseById(id: number): Promise<Expense | undefined> {
@@ -64,8 +66,15 @@ export class MemStorage implements IStorage {
 
   async createExpense(userId: number, expense: InsertExpense): Promise<Expense> {
     const id = this.currentExpenseId++;
-    const newExpense = { ...expense, id, userId };
+    const newExpense = { 
+      ...expense, 
+      id, 
+      userId,
+      date: expense.date.toISOString().split('T')[0], // Convert Date to YYYY-MM-DD string
+      amount: expense.amount.toString() // Convert number to string
+    };
     this.expenses.set(id, newExpense);
+    console.log('New expense created:', newExpense);
     return newExpense;
   }
 

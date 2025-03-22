@@ -6,6 +6,12 @@ import { insertExpenseSchema } from "@shared/schema";
 import { format, startOfMonth, endOfMonth } from "date-fns";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+
+  app.get("/api/health", (req, res) => {
+    console.log("[INFO] Health check requested"); // Debug log
+    res.json({ status: "healthy" });
+  });
+
   setupAuth(app);
 
   // Expenses CRUD

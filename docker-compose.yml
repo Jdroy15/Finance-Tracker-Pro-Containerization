@@ -31,9 +31,9 @@ services:
   db:
     image: postgres:15-alpine
     environment:
-      - POSTGRES_USER=${PGUSER}
-      - POSTGRES_PASSWORD=${PGPASSWORD}
-      - POSTGRES_DB=${PGDATABASE}
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=fintrack
     volumes:
       - postgres_data:/var/lib/postgresql/data
     expose:
@@ -42,6 +42,16 @@ services:
       - app_network
     restart: unless-stopped
 
+  redis:
+    image: redis:latest
+    container_name: redis_server
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+
 networks:
   app_network:
     driver: bridge
@@ -49,3 +59,4 @@ networks:
 volumes:
   nginx_logs:
   postgres_data:
+  redis_data: 
